@@ -85,7 +85,7 @@ func (w *ipWatcher) update(ipInfo ip.Info) error {
 
 	// Request params
 	link := new(string)
-	*link = "https://maps.apple.com/?ll=29.8782,121.5494&z=15"
+	*link = fmt.Sprintf("https://maps.apple.com/?ll=%s&z=%f", ipInfo.Loc, 15.0) // Doc: https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/MapLinks/MapLinks.html
 	p := &bot.SendMessageParams{
 		ChatID:    w.chatID,
 		ParseMode: parseMode,
