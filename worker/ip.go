@@ -54,32 +54,32 @@ func (w *ipWatcher) Start() error {
 
 // check if the IP has changed
 func (w *ipWatcher) check() error {
-	info, err := ip.Get()
+	ipInfo, err := ip.Get()
 	if err != nil {
 		return fmt.Errorf("failed to get ip: %w", err)
 	}
 
-	if w.lastIPInfo.IP == "" || info.IP != w.lastIPInfo.IP {
-		w.logger.Info("New IP detected", "original", w.lastIPInfo.IP, "new", info.IP)
-		return w.update(info)
+	if w.lastIPInfo.IP == "" || ipInfo.IP != w.lastIPInfo.IP {
+		w.logger.Info("New IP detected", "original", w.lastIPInfo.IP, "new", ipInfo.IP)
+		return w.update(ipInfo)
 	}
 	return nil
 }
 
 // update IP information and send message
-func (w *ipWatcher) update(info ip.Info) error {
+func (w *ipWatcher) update(ipInfo ip.Info) error {
 	// Message content
 	parseMode := models.ParseModeMarkdown
 	var sb strings.Builder
 	sb.WriteString("`")
-	sb.WriteString(fmt.Sprintf("IP:       %s\n", info.IP))
-	sb.WriteString(fmt.Sprintf("City:     %s\n", info.City))
-	sb.WriteString(fmt.Sprintf("Region:   %s\n", info.Region))
-	sb.WriteString(fmt.Sprintf("Country:  %s\n", info.Country))
-	sb.WriteString(fmt.Sprintf("Loc:      %s\n", info.Loc))
-	sb.WriteString(fmt.Sprintf("Org:      %s\n", info.Org))
-	sb.WriteString(fmt.Sprintf("Postal:   %s\n", info.Postal))
-	sb.WriteString(fmt.Sprintf("Timezone: %s\n", info.Timezone))
+	sb.WriteString(fmt.Sprintf("IP:       %s\n", ipInfo.IP))
+	sb.WriteString(fmt.Sprintf("City:     %s\n", ipInfo.City))
+	sb.WriteString(fmt.Sprintf("Region:   %s\n", ipInfo.Region))
+	sb.WriteString(fmt.Sprintf("Country:  %s\n", ipInfo.Country))
+	sb.WriteString(fmt.Sprintf("Loc:      %s\n", ipInfo.Loc))
+	sb.WriteString(fmt.Sprintf("Org:      %s\n", ipInfo.Org))
+	sb.WriteString(fmt.Sprintf("Postal:   %s\n", ipInfo.Postal))
+	sb.WriteString(fmt.Sprintf("Timezone: %s\n", ipInfo.Timezone))
 	sb.WriteString("`")
 	text := sb.String()
 
@@ -108,7 +108,7 @@ func (w *ipWatcher) update(info ip.Info) error {
 	}
 
 	// Update state
-	w.lastIPInfo = info
+	w.lastIPInfo = ipInfo
 	w.lastMessage = message
 
 	return nil
