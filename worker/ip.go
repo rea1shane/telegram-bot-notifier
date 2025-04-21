@@ -18,6 +18,7 @@ func newIPWatcher(logger *slog.Logger, botToken string, chatID any) (Worker, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to new bot: %w", err)
 	}
+
 	return &ipWatcher{
 		logger: logger,
 		b:      b,
@@ -27,12 +28,12 @@ func newIPWatcher(logger *slog.Logger, botToken string, chatID any) (Worker, err
 
 type ipWatcher struct {
 	logger *slog.Logger
+
 	b      *bot.Bot
 	chatID any
 
-	lastIPInfo        ip.Info
-	lastIPChangedTime time.Time
-	lastMessage       *models.Message
+	lastIPInfo  ip.Info
+	lastMessage *models.Message
 }
 
 func (w *ipWatcher) Start() error {
@@ -43,7 +44,7 @@ func (w *ipWatcher) Start() error {
 		for {
 			err := w.check()
 			if err != nil {
-				fmt.Printf("check error: %v\n", err)
+				fmt.Printf("failed to check ip: %v\n", err)
 			}
 			<-ticker.C
 		}
@@ -59,7 +60,7 @@ func (w *ipWatcher) check() error {
 	}
 
 	if w.lastIPInfo.IP == "" || info.IP != w.lastIPInfo.IP {
-		w.logger.Info("IP Changed", "old", w.lastIPInfo.IP, "new", info.IP)
+		w.logger.Info("New IP detected", "original", w.lastIPInfo.IP, "new", info.IP)
 		return w.update(info)
 	}
 	return nil
@@ -67,8 +68,6 @@ func (w *ipWatcher) check() error {
 
 // update IP information and send message
 func (w *ipWatcher) update(info ip.Info) error {
-	changedTime := time.Now()
-
 	// Message content
 	parseMode := models.ParseModeMarkdown
 	var sb strings.Builder
@@ -110,7 +109,6 @@ func (w *ipWatcher) update(info ip.Info) error {
 
 	// Update state
 	w.lastIPInfo = info
-	w.lastIPChangedTime = changedTime
 	w.lastMessage = message
 
 	return nil
