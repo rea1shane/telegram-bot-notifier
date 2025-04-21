@@ -44,7 +44,7 @@ func (w *ipWatcher) Start() error {
 		for {
 			err := w.check()
 			if err != nil {
-				fmt.Printf("failed to check ip: %v\n", err)
+				w.logger.Error("Failed to check", "error", err)
 			}
 			<-ticker.C
 		}
