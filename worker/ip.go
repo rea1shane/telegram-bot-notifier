@@ -40,7 +40,7 @@ type ipWatcher struct {
 
 func (w *ipWatcher) Start() error {
 	go func() {
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 
 		for {
