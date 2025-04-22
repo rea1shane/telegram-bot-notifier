@@ -13,7 +13,7 @@ var (
 
 func TestIpWatcher_Start(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	worker, err := newIPWatcher(logger.With("worker", "IP"), botToken, chatId)
+	worker, err := newIPWatcher(logger.With("worker", "IP Watcher"), botToken, chatId)
 	if err != nil {
 		panic(err)
 	}
