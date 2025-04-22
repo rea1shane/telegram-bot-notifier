@@ -49,9 +49,9 @@ func (w *ipWatcher) Start() error {
 			err := w.execute()
 			duration := time.Since(begin)
 			if err != nil {
-				w.logger.Error("execute failed", "duration_seconds", duration.Seconds(), "err", err)
+				w.logger.Error("Execute failed", "duration_seconds", duration.Seconds(), "err", err)
 			} else {
-				w.logger.Debug("execute succeeded", "duration_seconds", duration.Seconds())
+				w.logger.Debug("Execute succeeded", "duration_seconds", duration.Seconds())
 			}
 			<-ticker.C
 		}
