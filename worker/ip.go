@@ -13,6 +13,8 @@ import (
 	"github.com/rea1shane/telegram-bot-notifier/util/ip"
 )
 
+const ipWatcherWorkerName = "IP Watcher"
+
 func newIPWatcher(logger *slog.Logger, botToken string, chatID any) (Worker, error) {
 	b, err := bot.New(botToken)
 	if err != nil {
