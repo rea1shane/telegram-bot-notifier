@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/go-telegram/bot"
@@ -35,13 +34,13 @@ type ipWatcher struct {
 	b      *bot.Bot
 	chatID any
 
-	lastIPInfo    ip.Info
+	lastIP        string
 	lastMessageID int
 }
 
 func (w *ipWatcher) Start() error {
 	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
+		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()
 
 		for {
@@ -60,20 +59,20 @@ func (w *ipWatcher) Start() error {
 }
 
 func (w *ipWatcher) execute() error {
-	ipInfo, err := ip.Get()
+	currentIP, err := ip.Get()
 	if err != nil {
 		return fmt.Errorf("failed to get ip: %w", err)
 	}
 
 	// check if the IP has changed.
 	// If it has changed, send a message and record it.
-	if ipInfo.IP != w.lastIPInfo.IP {
-		w.logger.Info("New IP detected", "original", w.lastIPInfo.IP, "new", ipInfo.IP)
-		messageID, err := w.send(ipInfo)
+	if currentIP != w.lastIP {
+		w.logger.Info("New IP detected", "original", w.lastIP, "new", currentIP)
+		messageID, err := w.send(currentIP)
 		if err != nil {
 			return err
 		} else {
-			w.lastIPInfo = ipInfo
+			w.lastIP = currentIP
 			w.lastMessageID = messageID
 		}
 	}
@@ -82,33 +81,14 @@ func (w *ipWatcher) execute() error {
 }
 
 // send a message
-func (w *ipWatcher) send(ipInfo ip.Info) (messageID int, err error) {
-	// Message content
-	parseMode := models.ParseModeMarkdown
-	var sb strings.Builder
-	sb.WriteString("`")
-	sb.WriteString(fmt.Sprintf("IP:       %s\n", ipInfo.IP))
-	sb.WriteString(fmt.Sprintf("City:     %s\n", ipInfo.City))
-	sb.WriteString(fmt.Sprintf("Region:   %s\n", ipInfo.Region))
-	sb.WriteString(fmt.Sprintf("Country:  %s\n", ipInfo.Country))
-	sb.WriteString(fmt.Sprintf("Loc:      %s\n", ipInfo.Loc))
-	sb.WriteString(fmt.Sprintf("Org:      %s\n", ipInfo.Org))
-	sb.WriteString(fmt.Sprintf("Postal:   %s\n", ipInfo.Postal))
-	sb.WriteString(fmt.Sprintf("Timezone: %s\n", ipInfo.Timezone))
-	sb.WriteString("`")
-	text := sb.String()
-
+func (w *ipWatcher) send(addr string) (messageID int, err error) {
 	// Request params
-	link := new(string)
-	*link = fmt.Sprintf("https://maps.apple.com/?ll=%s&z=%f", ipInfo.Loc, 15.0) // Doc: https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/MapLinks/MapLinks.html
 	p := &bot.SendMessageParams{
 		ChatID:    w.chatID,
-		ParseMode: parseMode,
-		Text:      text,
-		LinkPreviewOptions: &models.LinkPreviewOptions{
-			URL: link,
-		},
+		ParseMode: models.ParseModeMarkdown,
+		Text:      fmt.Sprintf("`Current IP: %s`", addr),
 	}
+
 	// Add reply
 	if w.lastMessageID != -1 {
 		p.ReplyParameters = &models.ReplyParameters{
