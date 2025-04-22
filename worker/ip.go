@@ -20,9 +20,10 @@ func newIPWatcher(logger *slog.Logger, botToken string, chatID any) (Worker, err
 	}
 
 	return &ipWatcher{
-		logger: logger,
-		b:      b,
-		chatID: chatID,
+		logger:        logger,
+		b:             b,
+		chatID:        chatID,
+		lastMessageID: -1,
 	}, nil
 }
 
@@ -32,8 +33,8 @@ type ipWatcher struct {
 	b      *bot.Bot
 	chatID any
 
-	lastIPInfo  ip.Info
-	lastMessage *models.Message
+	lastIPInfo    ip.Info
+	lastMessageID int
 }
 
 func (w *ipWatcher) Start() error {
@@ -42,9 +43,13 @@ func (w *ipWatcher) Start() error {
 		defer ticker.Stop()
 
 		for {
-			err := w.check()
+			begin := time.Now()
+			err := w.execute()
+			duration := time.Since(begin)
 			if err != nil {
-				w.logger.Error("Failed to check", "error", err)
+				w.logger.Error("execute failed", "duration", duration, "err", err)
+			} else {
+				w.logger.Debug("execute succeeded", "duration", duration)
 			}
 			<-ticker.C
 		}
@@ -52,22 +57,30 @@ func (w *ipWatcher) Start() error {
 	return nil
 }
 
-// check if the IP has changed
-func (w *ipWatcher) check() error {
+func (w *ipWatcher) execute() error {
 	ipInfo, err := ip.Get()
 	if err != nil {
 		return fmt.Errorf("failed to get ip: %w", err)
 	}
 
-	if w.lastIPInfo.IP == "" || ipInfo.IP != w.lastIPInfo.IP {
+	// check if the IP has changed.
+	// If it has changed, send a message and record it.
+	if ipInfo.IP != w.lastIPInfo.IP {
 		w.logger.Info("New IP detected", "original", w.lastIPInfo.IP, "new", ipInfo.IP)
-		return w.update(ipInfo)
+		messageID, err := w.send(ipInfo)
+		if err != nil {
+			return err
+		} else {
+			w.lastIPInfo = ipInfo
+			w.lastMessageID = messageID
+		}
 	}
+
 	return nil
 }
 
-// update IP information and send message
-func (w *ipWatcher) update(ipInfo ip.Info) error {
+// send a message
+func (w *ipWatcher) send(ipInfo ip.Info) (messageID int, err error) {
 	// Message content
 	parseMode := models.ParseModeMarkdown
 	var sb strings.Builder
@@ -95,21 +108,17 @@ func (w *ipWatcher) update(ipInfo ip.Info) error {
 		},
 	}
 	// Add reply
-	if w.lastMessage != nil {
+	if w.lastMessageID != -1 {
 		p.ReplyParameters = &models.ReplyParameters{
-			MessageID: w.lastMessage.ID,
+			MessageID: w.lastMessageID,
 		}
 	}
 
 	// Send
 	message, err := w.b.SendMessage(context.Background(), p)
 	if err != nil {
-		return fmt.Errorf("failed to send message: %w", err)
+		return 0, fmt.Errorf("failed to send message: %w", err)
 	}
 
-	// Update state
-	w.lastIPInfo = ipInfo
-	w.lastMessage = message
-
-	return nil
+	return message.ID, nil
 }
