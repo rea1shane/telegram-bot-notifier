@@ -93,6 +93,7 @@ func (w *ipWatcher) send(addr string) (messageID int, err error) {
 	if w.lastMessageID != -1 {
 		p.ReplyParameters = &models.ReplyParameters{
 			MessageID: w.lastMessageID,
+			Quote:     w.lastIP,
 		}
 	}
 
